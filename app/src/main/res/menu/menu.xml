@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:id="@+id/menugroup1" >
+        <item
+            android:id="@+id/Info"
+            android:icon="@mipmap/ic_launcher"
+            android:title="Info"/>
+        <item
+            android:id="@+id/Edit"
+            android:icon="@mipmap/ic_launcher"
+            android:title="Изменить"/>
+        <item
+            android:id="@+id/Call"
+            android:icon="@mipmap/ic_launcher"
+            android:title="Позвонить"/>
+        <item
+            android:id="@+id/SendSMS"
+            android:title="Отправить SMS"/>
+        <item
+            android:id="@+id/SendEmail"
+            android:title="Отправить Email"/>
+        <item
+            android:id="@+id/SendCryptoEmail"
+            android:title="Отправить CryptoSMS"/>
+        <item
+            android:id="@+id/SendTelegram"
+            android:title="Написать в Telegram"/>
+    </group>
+</menu>
