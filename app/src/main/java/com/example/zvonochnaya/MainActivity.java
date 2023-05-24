@@ -3,6 +3,7 @@ package com.example.zvonochnaya;
 import java.util.Random;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
@@ -10,12 +11,14 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.Telephony;
 import android.telephony.SmsManager;
 import android.text.TextUtils;
 import android.view.Menu;
@@ -62,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        System.out.println(123);
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
                 != PackageManager.PERMISSION_GRANTED) {
             if ((Boolean) shouldShowRequestPermissionRationale(
@@ -71,6 +75,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             requestPermissions(new String[]{Manifest.permission.READ_CONTACTS},
                     PERMISION_READ_CONTACTS);
         }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+            if (shouldShowRequestPermissionRationale(Manifest.permission.READ_SMS)) {
+                Toast.makeText(this, "Please grant SMS permission!", Toast.LENGTH_SHORT).show();
+            }
+            requestPermissions(new String[]{Manifest.permission.READ_SMS},
+                    READ_SMS_PERMISSIONS_REQUEST);
+        } else {
+            listenForSms();
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.RECEIVE_SMS)) {
+                // Explain to the user why the permission is needed, e.g., using a dialog or Snackbar
+            }
+
+            // Request the permission
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.RECEIVE_SMS},
+                    1);
+        } else {
+            // Permission is already granted, you can proceed with SMS receiver setup
+            setupSmsReceiver();
+        }
+
         textView = (TextView) findViewById(R.id.textView);
         ls = (ListView) findViewById(R.id.listView);
         add = (ImageView) findViewById(R.id.buttonAdd);
@@ -86,7 +115,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 showMenu(view);
             }
         });
-
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+            if (shouldShowRequestPermissionRationale(Manifest.permission.READ_SMS)) {
+                Toast.makeText(this, "Please grant SMS permission!", Toast.LENGTH_SHORT).show();
+            }
+            requestPermissions(new String[]{Manifest.permission.READ_SMS},
+                    READ_SMS_PERMISSIONS_REQUEST);
+        } else {
+            listenForSms();
+        }
+        Intent serviceIntent = new Intent(this, SmsService.class);
+        startService(serviceIntent);
         sms();
     }
     public void sms(){
@@ -216,6 +256,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    private void listenForSms() {
+        // Check for SMS permission again, as it might be granted at runtime
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS)
+                == PackageManager.PERMISSION_GRANTED) {
+            // Register the SMS receiver dynamically
+            SmsReceiver smsReceiver = new SmsReceiver();
+            IntentFilter filter = new IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION);
+            registerReceiver(smsReceiver, filter);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == 1) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, set up your SMS receiver
+                setupSmsReceiver();
+            } else {
+                // Permission denied, handle accordingly (e.g., display a message to the user)
+            }
+        }
+    }
+
+    private void setupSmsReceiver() {
+        SmsReceiver smsReceiver = new SmsReceiver();
+        IntentFilter filter = new IntentFilter(Telephony.Sms.Intents.SMS_RECEIVED_ACTION);
+        registerReceiver(smsReceiver, filter);
+    }
     @SuppressLint("MissingPermission")
     void call() {
         String phoneNumber = contacts.get(index).getPhone();
